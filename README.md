@@ -134,6 +134,8 @@ Use //i to re-attach
 - `Ctrl+]` - Detach (tool keeps running)
 - `/exit` - Terminate the tool session
 
+> **Note:** Messages exchanged while in interactive mode (after `//i`) are not captured for forwarding. Use regular mode for conversations you want to forward between tools.
+
 ### Session Persistence
 
 Sessions persist automatically:
