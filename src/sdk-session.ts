@@ -2,7 +2,20 @@ import { spawn, ChildProcess } from 'child_process';
 import { createInterface, Interface, CompleterResult } from 'readline';
 import * as pty from 'node-pty';
 import { IPty } from 'node-pty';
+import { marked } from 'marked';
+import TerminalRenderer from 'marked-terminal';
 import { stripAnsi } from './utils.js';
+
+// Configure marked to render markdown for terminal with colors
+marked.setOptions({
+  // @ts-ignore - marked-terminal types not fully compatible
+  renderer: new TerminalRenderer({
+    // Customize colors
+    codespan: (code: string) => `\x1b[93m${code}\x1b[0m`, // Yellow for inline code
+    strong: (text: string) => `\x1b[1m${text}\x1b[0m`,    // Bold
+    em: (text: string) => `\x1b[3m${text}\x1b[0m`,        // Italic
+  })
+});
 
 interface Message {
   tool: string;
@@ -422,7 +435,6 @@ export class SDKSession {
       // Start spinner
       const spinner = new Spinner(`${colors.brightCyan}Claude${colors.reset} is thinking`);
       spinner.start();
-      let firstOutput = true;
       
       const proc = spawn('claude', args, {
         cwd: this.cwd,
@@ -434,15 +446,7 @@ export class SDKSession {
       let stderr = '';
 
       proc.stdout.on('data', (data) => {
-        // Stop spinner on first output
-        if (firstOutput) {
-          spinner.stop();
-          console.log(''); // newline before response
-          firstOutput = false;
-        }
-        const text = data.toString();
-        process.stdout.write(text); // Stream output
-        stdout += text;
+        stdout += data.toString();
       });
 
       proc.stderr.on('data', (data) => {
@@ -450,15 +454,18 @@ export class SDKSession {
       });
 
       proc.on('close', (code) => {
-        spinner.stop(); // Ensure spinner is stopped
-        if (!firstOutput) {
-          console.log(''); // newline after response
-        }
+        spinner.stop();
         
         if (code !== 0) {
           reject(new Error(`Claude exited with code ${code}: ${stderr || stdout}`));
         } else {
-          this.claudeHasSession = true; // Mark that we now have a session
+          // Render the response with markdown formatting
+          console.log('');
+          const rendered = marked.parse(stdout.trim()) as string;
+          process.stdout.write(rendered);
+          console.log('');
+          
+          this.claudeHasSession = true;
           resolve(stripAnsi(stdout).trim());
         }
       });
@@ -485,7 +492,6 @@ export class SDKSession {
       // Start spinner
       const spinner = new Spinner(`${colors.brightMagenta}Gemini${colors.reset} is thinking`);
       spinner.start();
-      let firstOutput = true;
       
       const proc = spawn('gemini', args, {
         cwd: this.cwd,
@@ -497,15 +503,7 @@ export class SDKSession {
       let stderr = '';
 
       proc.stdout.on('data', (data) => {
-        // Stop spinner on first output
-        if (firstOutput) {
-          spinner.stop();
-          console.log(''); // newline before response
-          firstOutput = false;
-        }
-        const text = data.toString();
-        process.stdout.write(text); // Stream output
-        stdout += text;
+        stdout += data.toString();
       });
 
       proc.stderr.on('data', (data) => {
@@ -513,15 +511,18 @@ export class SDKSession {
       });
 
       proc.on('close', (code) => {
-        spinner.stop(); // Ensure spinner is stopped
-        if (!firstOutput) {
-          console.log(''); // newline after response
-        }
+        spinner.stop();
         
         if (code !== 0) {
           reject(new Error(`Gemini exited with code ${code}: ${stderr || stdout}`));
         } else {
-          this.geminiHasSession = true; // Mark that we now have a session
+          // Render the response with markdown formatting
+          console.log('');
+          const rendered = marked.parse(stdout.trim()) as string;
+          process.stdout.write(rendered);
+          console.log('');
+          
+          this.geminiHasSession = true;
           resolve(stripAnsi(stdout).trim());
         }
       });
