@@ -36,7 +36,8 @@ This is tedious and breaks your flow.
 
 ```bash
 # Clone and install
-cd claude-gemini-cli
+git clone https://github.com/jacob-bd/ai-code-connect.git
+cd ai-code-connect
 npm install
 npm run build
 
