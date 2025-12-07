@@ -94,6 +94,20 @@ That's it! This launches the interactive session.
 | `/clear` | Clear sessions and history |
 | `/quit` or `/cya` | Exit |
 
+#### Forward Message Format
+
+When forwarding a response, AIC² wraps it with context so the receiving tool understands the source:
+
+```
+Another AI assistant (Claude Code) provided this response. Please review and share your thoughts:
+
+---
+[The forwarded response content]
+---
+
+Additional context: [your message here, if provided]
+```
+
 ### Tool Slash Commands
 
 Use double slash (`//`) to run tool-specific slash commands:
