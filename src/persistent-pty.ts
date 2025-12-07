@@ -222,6 +222,14 @@ export class PersistentPtyManager {
       let filteredData = data
         .split(FOCUS_IN_SEQ).join('')
         .split(FOCUS_OUT_SEQ).join('');
+
+      // Filter Device Attributes responses (e.g., "64;1;2;4;6;17;18;21;22;52c" or "0u64;...")
+      // These are terminal responses to DA queries that leak through
+      filteredData = filteredData
+        .replace(/\d*u?[\d;]+c/g, '')           // DA response ending in 'c'
+        .replace(/\x1b\[\?[\d;]+c/g, '')        // ESC[?...c (Primary DA)
+        .replace(/\x1b\[>[\d;]+c/g, '');        // ESC[>...c (Secondary DA)
+
       if (filteredData.length > 0) {
         process.stdout.write(filteredData);
       }

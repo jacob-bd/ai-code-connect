@@ -28,6 +28,9 @@ export interface ToolAdapter {
   /** Fallback timeout in ms - if no output for this long, assume response complete */
   readonly idleTimeout: number;
 
+  /** Time in ms to wait for tool to start before sending commands (first launch) */
+  readonly startupDelay: number;
+
   /** Check if the tool is installed and available */
   isAvailable(): Promise<boolean>;
 

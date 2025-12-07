@@ -21,6 +21,9 @@ export class GeminiAdapter implements ToolAdapter {
   // Fallback: if no output for 1.5 seconds, assume response complete
   readonly idleTimeout = 1500;
 
+  // Gemini is slower to start (~8 seconds for first launch due to auth/loading)
+  readonly startupDelay = 8000;
+
   private hasActiveSession = false;
   
   async isAvailable(): Promise<boolean> {

@@ -939,13 +939,18 @@ export class SDKSession {
 
   /**
    * Enter interactive mode and automatically send a slash command
+   * Uses v1.0.1 proven approach: detect new vs reattach, proper delay, char-by-char typing
    */
   private async enterInteractiveModeWithCommand(slashCommand: string): Promise<void> {
     const adapter = this.registry.get(this.activeTool);
     const toolName = adapter?.displayName || this.activeTool;
     const toolColor = adapter?.color || colors.white;
 
-    // Get or create the persistent PTY manager (don't wait for ready)
+    // Check if manager exists BEFORE getting (to detect new spawn vs reattach)
+    const existingManager = this.ptyManagers.get(this.activeTool);
+    const isReattach = existingManager !== undefined && !existingManager.isDead();
+
+    // Get or create the persistent PTY manager (don't wait - user sees startup)
     const manager = await this.getOrCreateManager(this.activeTool, false);
 
     // Pause readline
@@ -956,10 +961,22 @@ export class SDKSession {
     // Mark as attached
     manager.attach();
 
-    // Send the command after a short delay to let the tool initialize
+    // For reattach, send quickly. For new process, use adapter's startup delay.
+    const sendDelay = isReattach ? 100 : (adapter?.startupDelay || 2500);
+
+    // Send command after appropriate delay, typing char by char for reliability
     setTimeout(() => {
-      manager.write(slashCommand + '\n');
-    }, 500);
+      let i = 0;
+      const fullCommand = slashCommand + '\r';
+      const typeNextChar = () => {
+        if (i < fullCommand.length) {
+          manager.write(fullCommand[i]);
+          i++;
+          setTimeout(typeNextChar, 20);
+        }
+      };
+      typeNextChar();
+    }, sendDelay);
 
     return this.runInteractiveSession(manager, toolName, toolColor);
   }

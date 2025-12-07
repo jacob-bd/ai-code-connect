@@ -22,6 +22,9 @@ export class ClaudeAdapter implements ToolAdapter {
   // Claude Code can have brief pauses between output chunks during response generation
   readonly idleTimeout = 3000;
 
+  // Claude starts relatively quickly (~2.5 seconds for first launch)
+  readonly startupDelay = 2500;
+
   private hasActiveSession = false;
   
   async isAvailable(): Promise<boolean> {
