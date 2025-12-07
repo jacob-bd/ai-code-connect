@@ -166,14 +166,16 @@ function fullWidthLine(char: string = '═', color: string = colors.dim): string
   return `${color}${char.repeat(width)}${colors.reset}`;
 }
 
-// ASCII Art banner for AIC² (larger version)
+// ASCII Art banner for AIC² (ANSI Shadow style - 8 lines with ASCII 2)
 const AIC_BANNER = `
-${colors.brightCyan}     ██████╗  ${colors.brightMagenta}██╗${colors.brightYellow} ██████╗${colors.reset}  ${colors.dim}²${colors.reset}
-${colors.brightCyan}    ██╔══██╗ ${colors.brightMagenta}██║${colors.brightYellow}██╔════╝${colors.reset}
-${colors.brightCyan}    ███████║ ${colors.brightMagenta}██║${colors.brightYellow}██║     ${colors.reset}
-${colors.brightCyan}    ██╔══██║ ${colors.brightMagenta}██║${colors.brightYellow}██║     ${colors.reset}
-${colors.brightCyan}    ██║  ██║ ${colors.brightMagenta}██║${colors.brightYellow}╚██████╗${colors.reset}
-${colors.brightCyan}    ╚═╝  ╚═╝ ${colors.brightMagenta}╚═╝${colors.brightYellow} ╚═════╝${colors.reset}
+${colors.brightCyan} █████╗ ${colors.brightMagenta}██╗${colors.brightYellow} ██████╗ ${colors.dim}██████╗${colors.reset}
+${colors.brightCyan}██╔══██╗${colors.brightMagenta}██║${colors.brightYellow}██╔════╝ ${colors.dim}╚════██╗${colors.reset}
+${colors.brightCyan}██║  ██║${colors.brightMagenta}██║${colors.brightYellow}██║      ${colors.dim} █████╔╝${colors.reset}
+${colors.brightCyan}███████║${colors.brightMagenta}██║${colors.brightYellow}██║      ${colors.dim}██╔═══╝${colors.reset}
+${colors.brightCyan}██╔══██║${colors.brightMagenta}██║${colors.brightYellow}██║      ${colors.dim}███████╗${colors.reset}
+${colors.brightCyan}██║  ██║${colors.brightMagenta}██║${colors.brightYellow}██║      ${colors.dim}╚══════╝${colors.reset}
+${colors.brightCyan}██║  ██║${colors.brightMagenta}██║${colors.brightYellow}╚██████╗${colors.reset}
+${colors.brightCyan}╚═╝  ╚═╝${colors.brightMagenta}╚═╝${colors.brightYellow} ╚═════╝${colors.reset}
 `;
 
 // Tool configuration - add new tools here
