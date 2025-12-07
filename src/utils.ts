@@ -184,3 +184,26 @@ export function formatResponse(toolName: string, response: string): string {
   const separator = '─'.repeat(60);
   return `\n${separator}\n[${toolName}]\n${separator}\n${response}\n${separator}\n`;
 }
+
+/**
+ * Get the version of a CLI tool asynchronously
+ * Uses runCommand to avoid blocking the main thread
+ */
+export async function getToolVersionAsync(command: string): Promise<string | null> {
+  try {
+    const { stdout, stderr, exitCode } = await runCommand(command, ['-v']);
+    if (exitCode !== 0) return null;
+
+    // Some tools output version to stderr
+    const output = (stdout || stderr).trim();
+    if (!output) return null;
+
+    // Extract version number (first line, clean up)
+    const firstLine = output.split('\n')[0];
+    // Handle formats like "2.0.59 (Claude Code)" or just "0.19.1"
+    const version = firstLine.split(' ')[0];
+    return version || null;
+  } catch {
+    return null;
+  }
+}

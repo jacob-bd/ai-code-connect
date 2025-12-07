@@ -1,28 +1,11 @@
-import { execSync } from 'child_process';
 import { createInterface, Interface, CompleterResult } from 'readline';
 import { marked } from 'marked';
 import TerminalRenderer from 'marked-terminal';
-import { stripAnsi } from './utils.js';
+import { stripAnsi, commandExists } from './utils.js';
 import { getDefaultTool, setDefaultTool } from './config.js';
 import { VERSION } from './version.js';
 import { AdapterRegistry } from './adapters/base.js';
 import { PersistentPtyManager, PtyState, PtyConfig } from './persistent-pty.js';
-
-/**
- * Get the version of a CLI tool
- */
-function getToolVersion(command: string): string | null {
-  try {
-    const output = execSync(`${command} -v 2>/dev/null`, { encoding: 'utf-8' }).trim();
-    // Extract version number (first line, clean up)
-    const firstLine = output.split('\n')[0];
-    // Handle formats like "2.0.59 (Claude Code)" or just "0.19.1"
-    const version = firstLine.split(' ')[0];
-    return version || null;
-  } catch {
-    return null;
-  }
-}
 
 // Configure marked to render markdown for terminal with colors
 marked.setOptions({
@@ -438,14 +421,14 @@ export class SDKSession {
   async start(): Promise<void> {
     // Ensure cursor is visible
     process.stdout.write(cursor.show + cursor.blockBlink);
-    
+
     const width = getTerminalWidth();
-    
-    // Get tool versions to check availability
-    const claudeVersion = getToolVersion('claude');
-    const geminiVersion = getToolVersion('gemini');
-    const claudeAvailable = claudeVersion !== null;
-    const geminiAvailable = geminiVersion !== null;
+
+    // Fast availability check using 'which' command (~50ms total vs ~4s for version checks)
+    const [claudeAvailable, geminiAvailable] = await Promise.all([
+      commandExists('claude'),
+      commandExists('gemini')
+    ]);
     const availableCount = (claudeAvailable ? 1 : 0) + (geminiAvailable ? 1 : 0);
 
     // Handle no tools available
@@ -496,11 +479,11 @@ export class SDKSession {
       `${colors.brightCyan}A${colors.brightMagenta}I${colors.reset} ${colors.brightYellow}C${colors.white}ode${colors.reset} ${colors.brightYellow}C${colors.white}onnect${colors.reset}  ${colors.dim}v${VERSION}${colors.reset}`,
       '',
       `${colors.dim}Connected Tools:${colors.reset}`,
-      claudeVersion 
-        ? `✅ ${colors.brightCyan}Claude Code${colors.reset} ${colors.dim}v${claudeVersion}${colors.reset}`
+      claudeAvailable
+        ? `✅ ${colors.brightCyan}Claude Code${colors.reset} ${colors.dim}ready${colors.reset}`
         : `❌ ${colors.dim}Claude Code (not found)${colors.reset}`,
-      geminiVersion
-        ? `✅ ${colors.brightMagenta}Gemini CLI${colors.reset} ${colors.dim}v${geminiVersion}${colors.reset}`
+      geminiAvailable
+        ? `✅ ${colors.brightMagenta}Gemini CLI${colors.reset} ${colors.dim}ready${colors.reset}`
         : `❌ ${colors.dim}Gemini CLI (not found)${colors.reset}`,
       '',
       `${colors.dim}📁 ${this.cwd}${colors.reset}`,
