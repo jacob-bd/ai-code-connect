@@ -208,6 +208,17 @@ aic --version               # Show version
 aic --help                  # Show help
 ```
 
+## Version Check
+
+AIC² automatically checks for updates when you start a session. If a newer version is available, you'll see a notification:
+
+![Version Check](assets/version_check.png)
+
+To update, simply run:
+```bash
+npm update -g ai-code-connect
+```
+
 ## Configuration
 
 ### Default Tool
