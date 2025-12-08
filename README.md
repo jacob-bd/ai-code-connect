@@ -32,6 +32,8 @@ This is tedious and breaks your flow.
   <a href="https://www.youtube.com/watch?v=CNsMhvaSuAs">
     <img src="https://img.youtube.com/vi/CNsMhvaSuAs/maxresdefault.jpg" alt="AIC² Demo Video" width="70%">
   </a>
+  <br>
+  (10 min overview/demo video)
 </p>
 
 `aic` bridges both tools in a single interactive session with:
