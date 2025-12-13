@@ -183,7 +183,7 @@ Use /i to re-attach
 
 **Key bindings in interactive mode:**
 - `Ctrl+]` or `Ctrl+\` - Detach (tool keeps running)
-- `Ctrl+6` - Quick toggle to the other tool
+- `Ctrl+6` or `Ctrl+Q` - Quick toggle to the other tool (Ctrl+6 for iTerm2, Ctrl+Q for Terminal.app)
 - `/exit` - Terminate the tool session
 
 > **Tip:** Use `//status` or `//cost` to quickly run tool commands—AIC will enter interactive mode, run the command, and you press `Ctrl+]` or `Ctrl+\` when done.
