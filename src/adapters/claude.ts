@@ -136,8 +136,11 @@ export class ClaudeAdapter implements ToolAdapter {
     output = output.replace(/^\s*Opus.*API Usage.*$/gm, '');
     output = output.replace(/^\s*\/model to try.*$/gm, '');
     output = output.replace(/^\s*~\/.*$/gm, ''); // Directory paths
-    output = output.replace(/^\s*\?\s*for shortcuts\s*$/gm, '');
-    output = output.replace(/^\s*Try ".*"\s*$/gm, '');
+    // Remove suggestion prompts (can have > prefix or other characters)
+    output = output.replace(/^[>\s]*\?\s*for shortcuts\s*$/gm, '');
+    output = output.replace(/^[>\s]*Try ".*"\s*$/gm, '');
+    // Also remove /ide for Cursor and similar suggestions
+    output = output.replace(/^[>\s]*\/\w+\s+for\s+\w+\s*$/gm, '');
 
     // Remove typing hints and keyboard shortcuts help
     output = output.replace(/You can also use Ctrl\+P.*history.*$/gm, '');

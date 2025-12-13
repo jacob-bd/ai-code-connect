@@ -57,6 +57,9 @@ export interface ToolAdapter {
 
   /** Set whether there's an active session (for persistence) */
   setHasSession(value: boolean): void;
+
+  /** Mark that an interactive session has been started (optional, for PTY respawns) */
+  markInteractiveSessionStarted?(): void;
 }
 
 /**

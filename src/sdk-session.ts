@@ -415,6 +415,12 @@ export class SDKSession {
 
       // Spawn the PTY (optionally wait for ready)
       await manager.spawn(this.cwd, waitForReady);
+
+      // Mark that an interactive session has started (for adapters that need this, like Gemini)
+      // This ensures subsequent PTY respawns will resume the session
+      if (adapter.markInteractiveSessionStarted) {
+        adapter.markInteractiveSessionStarted();
+      }
     }
 
     return manager;

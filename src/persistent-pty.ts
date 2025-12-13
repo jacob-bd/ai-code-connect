@@ -545,7 +545,11 @@ export class PersistentPtyManager {
   detach(): void {
     if (!this.isAttached) return;
     this.isAttached = false;
-    this.setState(PtyState.IDLE);
+    // Don't change state if PTY is dead - preserve the DEAD state
+    // so getOrCreateManager knows to spawn a new PTY
+    if (this.state !== PtyState.DEAD) {
+      this.setState(PtyState.IDLE);
+    }
   }
 
   /**

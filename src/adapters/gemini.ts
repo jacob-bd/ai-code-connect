@@ -25,7 +25,8 @@ export class GeminiAdapter implements ToolAdapter {
   readonly startupDelay = 8000;
 
   private hasActiveSession = false;
-  
+  private hasStartedInteractiveSession = false;
+
   async isAvailable(): Promise<boolean> {
     return commandExists('gemini');
   }
@@ -58,8 +59,9 @@ export class GeminiAdapter implements ToolAdapter {
   }
 
   getPersistentArgs(): string[] {
-    // Resume previous session if we have one from regular mode
-    if (this.hasActiveSession) {
+    // Resume previous session if we have one from regular mode OR
+    // if we've already started an interactive session (for respawns after exit)
+    if (this.hasActiveSession || this.hasStartedInteractiveSession) {
       return ['--resume', 'latest'];
     }
     return [];
@@ -189,13 +191,19 @@ export class GeminiAdapter implements ToolAdapter {
   
   resetContext(): void {
     this.hasActiveSession = false;
+    this.hasStartedInteractiveSession = false;
   }
-  
+
+  /** Mark that an interactive session has been started (for PTY respawns) */
+  markInteractiveSessionStarted(): void {
+    this.hasStartedInteractiveSession = true;
+  }
+
   /** Check if there's an active session */
   hasSession(): boolean {
     return this.hasActiveSession;
   }
-  
+
   /** Mark that a session exists (for loading from persisted state) */
   setHasSession(value: boolean): void {
     this.hasActiveSession = value;
