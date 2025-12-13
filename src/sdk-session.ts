@@ -28,31 +28,27 @@ interface Message {
 const MAX_HISTORY_SIZE = 1000;
 const REQUEST_TIMEOUT_MS = 120000;
 
-// Detach key codes - multiple options for compatibility across terminals
-// Traditional raw control characters (used by Terminal.app and others)
+// Detach key codes - Ctrl+] and Ctrl+\ to return to AIC menu
 const DETACH_KEYS = {
   CTRL_BRACKET: 0x1d,      // Ctrl+] = 0x1D = 29
   CTRL_BACKSLASH: 0x1c,    // Ctrl+\ = 0x1C = 28
-  CTRL_CARET: 0x1e,        // Ctrl+^ = 0x1E = 30 (Ctrl+Shift+6 on US keyboards)
-  CTRL_UNDERSCORE: 0x1f,   // Ctrl+_ = 0x1F = 31 (Ctrl+Shift+- on US keyboards)
-  ESCAPE: 0x1b,            // Escape = 0x1B = 27
 };
 
-// Toggle key for quick switching between tools in interactive mode
-const TOGGLE_KEY = 0x1c;           // Ctrl+\ = 0x1C = 28
-const CSI_U_TOGGLE_SEQ = '\x1b[92;5u';  // Ctrl+\ in CSI u format (keycode 92 = '\')
+// Toggle keys for quick switching between tools
+const TOGGLE_KEY = 0x1e;       // Ctrl+6 / Ctrl+^ = 0x1E = 30 (works in iTerm2)
+const TOGGLE_KEY_ALT = 0x11;   // Ctrl+Q = 0x11 = 17 (works in Terminal.app)
 
 // CSI u sequences - modern keyboard protocol used by iTerm2
 // Format: ESC [ <keycode> ; <modifiers> u
 // Modifier 5 = Ctrl (4) + 1
 const CSI_U_DETACH_SEQS = [
   '\x1b[93;5u',   // Ctrl+] (keycode 93 = ])
-  // Note: Ctrl+\ ('\x1b[92;5u') is now used for toggle, not detach
-  '\x1b[54;5u',   // Ctrl+^ / Ctrl+6 (keycode 54 = 6)
-  '\x1b[45;5u',   // Ctrl+_ / Ctrl+- (keycode 45 = -)
-  '\x1b[54;6u',   // Ctrl+Shift+6 (modifier 6 = Ctrl+Shift)
-  '\x1b[45;6u',   // Ctrl+Shift+- (modifier 6 = Ctrl+Shift)
+  '\x1b[92;5u',   // Ctrl+\ (keycode 92 = \)
 ];
+
+// CSI u sequences for toggle keys
+const CSI_U_TOGGLE_SEQ = '\x1b[54;5u';      // Ctrl+6 in CSI u format (keycode 54 = '6')
+const CSI_U_TOGGLE_SEQ_ALT = '\x1b[113;5u'; // Ctrl+Q in CSI u format (keycode 113 = 'q')
 
 // Terminal sequences to filter out
 // Focus reporting - sent by terminals when window gains/loses focus
@@ -212,7 +208,7 @@ function getToolDisplayName(name: string): string {
 const AIC_COMMANDS = [
   { value: '/claude', name: `${rainbowText('/claude')}        Switch to Claude Code`, description: 'Switch to Claude Code (add -i for interactive)' },
   { value: '/gemini', name: `${rainbowText('/gemini', 1)}        Switch to Gemini CLI`, description: 'Switch to Gemini CLI (add -i for interactive)' },
-  { value: '/i', name: `${rainbowText('/i', 2)}             Enter interactive mode`, description: 'Enter interactive mode (Ctrl+] to detach, Ctrl+\\\\ to toggle)' },
+  { value: '/i', name: `${rainbowText('/i', 2)}             Enter interactive mode`, description: 'Enter interactive mode (Ctrl+] or Ctrl+\\\\ to detach, Ctrl+6 or Ctrl+Q to toggle)' },
   { value: '/forward', name: `${rainbowText('/forward', 3)}       Forward last response`, description: 'Forward response: /forward [tool] [msg]' },
   { value: '/fwd', name: `${rainbowText('/fwd', 4)}            Forward (alias)`, description: 'Forward response: /fwd [tool] [msg]' },
   { value: '/history', name: `${rainbowText('/history', 4)}       Show conversation`, description: 'Show conversation history' },
@@ -586,8 +582,10 @@ export class SDKSession {
     console.log('');
     
     // Tips section
-    console.log(`  ${colors.dim}💡 ${colors.brightYellow}//command${colors.dim} opens interactive mode & sends the command. ${colors.white}Use ${colors.brightYellow}Ctrl+]${colors.white} to return, ${colors.brightYellow}Ctrl+\\${colors.white} to toggle tools${colors.reset}`);
-    console.log(`  ${colors.dim}💡 ${colors.brightYellow}Tab${colors.dim}: autocomplete   ${colors.brightYellow}↑/↓${colors.dim}: history${colors.reset}`);
+    console.log(`  ${colors.yellow}💡 ${colors.brightYellow}//command${colors.yellow} opens interactive mode & sends the command${colors.reset}`);
+    console.log(`  ${colors.yellow}💡 ${colors.brightYellow}Ctrl+]${colors.yellow} or ${colors.brightYellow}Ctrl+\\${colors.yellow} to detach interactive mode (session keeps running)${colors.reset}`);
+    console.log(`  ${colors.yellow}💡 ${colors.brightYellow}Ctrl+6${colors.yellow} or ${colors.brightYellow}Ctrl+Q${colors.yellow} to toggle tools${colors.reset}`);
+    console.log(`  ${colors.yellow}💡 ${colors.brightYellow}Tab${colors.yellow}: autocomplete   ${colors.brightYellow}↑/↓${colors.yellow}: history${colors.reset}`);
     console.log('');
     
     // Show active tool with full width separator
@@ -846,7 +844,7 @@ export class SDKSession {
     console.log(`${colors.white}Session Commands:${colors.reset}`);
     console.log(`  ${rainbowText('/claude')}        Switch to Claude Code ${colors.dim}(add -i for interactive)${colors.reset}`);
     console.log(`  ${rainbowText('/gemini')}        Switch to Gemini CLI ${colors.dim}(add -i for interactive)${colors.reset}`);
-    console.log(`  ${rainbowText('/i')}             Enter interactive mode ${colors.dim}(Ctrl+] to detach, Ctrl+\\ to toggle)${colors.reset}`);
+    console.log(`  ${rainbowText('/i')}             Enter interactive mode ${colors.dim}(Ctrl+] or Ctrl+\\ to detach, Ctrl+6 or Ctrl+Q to toggle)${colors.reset}`);
     console.log(`  ${rainbowText('/forward')}       Forward last response ${colors.dim}[tool] [msg]${colors.reset}`);
     console.log(`  ${rainbowText('/forward -i')}    Forward and enter interactive mode`);
     console.log(`  ${rainbowText('/forwardi')}      Same as /forward -i ${colors.dim}(alias: /fwdi)${colors.reset}`);
@@ -859,14 +857,13 @@ export class SDKSession {
     console.log('');
     console.log(`${colors.white}Tool Commands:${colors.reset}`);
     console.log(`  ${colors.brightYellow}//command${colors.reset}        Send /command to the active tool`);
-    console.log(`  ${colors.dim}                 Opens interactive mode, sends command, Ctrl+] to return, Ctrl+\\ to toggle${colors.reset}`);
+    console.log(`  ${colors.dim}                 Opens interactive mode, sends command. Ctrl+] or Ctrl+\\ to detach, Ctrl+6 or Ctrl+Q to toggle${colors.reset}`);
     console.log('');
     console.log(`${colors.white}Tips:${colors.reset}`);
     console.log(`  ${colors.dim}•${colors.reset} ${colors.brightYellow}Tab${colors.reset}            Autocomplete commands`);
     console.log(`  ${colors.dim}•${colors.reset} ${colors.brightYellow}↑/↓${colors.reset}            Navigate history`);
-    console.log(`  ${colors.dim}•${colors.reset} ${colors.brightYellow}Ctrl+]${colors.reset}, ${colors.brightYellow}Ctrl+^${colors.reset}, or ${colors.brightYellow}Ctrl+_${colors.reset}  Detach from interactive mode`);
-    console.log(`  ${colors.dim}•${colors.reset} ${colors.brightYellow}Ctrl+\\${colors.reset}  Quick toggle between tools in interactive mode`);
-    console.log(`  ${colors.dim}•${colors.reset} ${colors.brightYellow}Esc Esc${colors.reset}        Detach (press Escape twice quickly)`);
+    console.log(`  ${colors.dim}•${colors.reset} ${colors.brightYellow}Ctrl+]${colors.reset} or ${colors.brightYellow}Ctrl+\\${colors.reset}  Detach from interactive mode`);
+    console.log(`  ${colors.dim}•${colors.reset} ${colors.brightYellow}Ctrl+6${colors.reset} or ${colors.brightYellow}Ctrl+Q${colors.reset}  Quick toggle between tools`);
     console.log('');
   }
 
@@ -1064,7 +1061,7 @@ export class SDKSession {
     } else if (isFirstLaunch) {
       console.log(`${colors.dim}💡 First launch of ${toolName} may take a few seconds to initialize...${colors.reset}`);
     }
-    console.log(`${colors.dim}Press ${colors.brightYellow}Ctrl+]${colors.dim} to detach, ${colors.brightYellow}Ctrl+\\${colors.dim} to toggle tools${colors.reset}\n`);
+    console.log(`${colors.dim}Press ${colors.brightYellow}Ctrl+]${colors.dim} or ${colors.brightYellow}Ctrl+\\${colors.dim} to detach (session keeps running), ${colors.brightYellow}Ctrl+6${colors.dim} or ${colors.brightYellow}Ctrl+Q${colors.dim} to toggle tools${colors.reset}\n`);
 
     // Mark as attached - output will now flow to stdout
     manager.attach();
@@ -1092,7 +1089,7 @@ export class SDKSession {
     this.rl?.close();
     this.rl = null;
 
-    console.log(`${colors.dim}Sending ${colors.brightYellow}${slashCommand}${colors.dim}... Press ${colors.brightYellow}Ctrl+]${colors.dim} to return, ${colors.brightYellow}Ctrl+\\${colors.dim} to toggle tools${colors.reset}\n`);
+    console.log(`${colors.dim}Sending ${colors.brightYellow}${slashCommand}${colors.dim}... Press ${colors.brightYellow}Ctrl+]${colors.dim} or ${colors.brightYellow}Ctrl+\\${colors.dim} to detach (session keeps running), ${colors.brightYellow}Ctrl+6${colors.dim} or ${colors.brightYellow}Ctrl+Q${colors.dim} to toggle tools${colors.reset}\n`);
 
     // Mark as attached
     manager.attach();
@@ -1153,7 +1150,6 @@ export class SDKSession {
 
       let detached = false;
       let isToggling = false;  // Guard to prevent re-entry during async toggle
-      let lastEscapeTime = 0;
       const debugKeys = process.env.AIC_DEBUG === '1';
 
       let onStdinData: ((data: Buffer) => void) | null = null;
@@ -1199,7 +1195,7 @@ export class SDKSession {
         resolve();
       };
 
-      // Toggle between tools without detaching (Ctrl+\)
+      // Toggle between tools without detaching (Ctrl+6)
       const performToggle = async () => {
         // Prevent re-entry during async operations
         if (isToggling) return;
@@ -1336,50 +1332,27 @@ export class SDKSession {
           }
         }
 
-        // Check for detach keys (note: Ctrl+\ is now used for toggle, not detach)
+        // Check for detach keys: Ctrl+] and Ctrl+\
         for (let i = 0; i < data.length; i++) {
           const byte = data[i];
           if (byte === DETACH_KEYS.CTRL_BRACKET ||
-              byte === DETACH_KEYS.CTRL_CARET ||
-              byte === DETACH_KEYS.CTRL_UNDERSCORE) {
+              byte === DETACH_KEYS.CTRL_BACKSLASH) {
             performDetach();
             return;
           }
         }
 
-        // Check for toggle key (Ctrl+\) or CSI u toggle sequence
-        if (str === CSI_U_TOGGLE_SEQ || str.includes(CSI_U_TOGGLE_SEQ)) {
+        // Check for toggle keys (Ctrl+6 or Ctrl+Q) or CSI u toggle sequences
+        if (str === CSI_U_TOGGLE_SEQ || str.includes(CSI_U_TOGGLE_SEQ) ||
+            str === CSI_U_TOGGLE_SEQ_ALT || str.includes(CSI_U_TOGGLE_SEQ_ALT)) {
           performToggle();
           return;
         }
         for (let i = 0; i < data.length; i++) {
-          if (data[i] === TOGGLE_KEY) {
+          if (data[i] === TOGGLE_KEY || data[i] === TOGGLE_KEY_ALT) {
             performToggle();
             return;
           }
-        }
-
-        // Double escape detection
-        if (data.length >= 2) {
-          for (let i = 0; i < data.length - 1; i++) {
-            if (data[i] === DETACH_KEYS.ESCAPE && data[i + 1] === DETACH_KEYS.ESCAPE) {
-              performDetach();
-              return;
-            }
-          }
-        }
-
-        // Single escape with timing
-        const isSingleEscape = data.length === 1 && data[0] === DETACH_KEYS.ESCAPE;
-        if (isSingleEscape) {
-          const now = Date.now();
-          if (now - lastEscapeTime < 500) {
-            performDetach();
-            return;
-          }
-          lastEscapeTime = now;
-        } else {
-          lastEscapeTime = 0;
         }
 
         // Forward to PTY
